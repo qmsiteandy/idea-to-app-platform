@@ -166,37 +166,6 @@ export async function createProject(input: NewProject): Promise<Project> {
 // 訊息可直接顯示給使用者的錯誤
 export class UserError extends Error {}
 
-// ---- 新增想法（收件匣） ----
-export type NewIdea = { title: string; details: string; type: "新專案" | "新功能"; target: string };
-
-const INBOX_FILE = path.join(process.cwd(), ".data", "inbox.json");
-
-export async function createIdea(input: NewIdea): Promise<void> {
-  const token = process.env.NOTION_TOKEN;
-  const inboxId = process.env.NOTION_INBOX_DATA_SOURCE_ID;
-  if (token && !inboxId) throw new UserError("尚未設定 NOTION_INBOX_DATA_SOURCE_ID，無法送出想法。");
-  if (token && inboxId) {
-    await new Client({ auth: token }).pages.create({
-      parent: { type: "data_source_id", data_source_id: inboxId },
-      properties: {
-        Idea: { title: text(input.title) },
-        Details: { rich_text: text(input.details) },
-        Type: { select: { name: input.type } },
-        "Target project": { rich_text: text(input.target) },
-        Handled: { select: { name: "待處理" } },
-      },
-    });
-    return;
-  }
-  let rows: unknown[] = [];
-  try {
-    rows = JSON.parse(await fs.readFile(INBOX_FILE, "utf8"));
-  } catch {}
-  rows.unshift({ id: randomUUID(), ...input, handled: "待處理", created_at: new Date().toISOString() });
-  await fs.mkdir(path.dirname(INBOX_FILE), { recursive: true });
-  await fs.writeFile(INBOX_FILE, JSON.stringify(rows, null, 2));
-}
-
 // ---- PRD（專案頁面內容） ----
 const TEXT_BLOCKS = new Set<PrdBlockType>([
   "heading_1", "heading_2", "heading_3", "paragraph", "bulleted_list_item", "numbered_list_item", "to_do",

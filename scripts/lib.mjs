@@ -1,7 +1,6 @@
 // 共用工具：Notion client、環境變數、純文字處理。純 Node ESM，無額外相依。
 import { Client } from "@notionhq/client";
 
-export const INBOX_DS = process.env.NOTION_INBOX_DATA_SOURCE_ID || "116a3153-cc28-482c-a3f4-73f112d0646a";
 export const PROJECTS_DS = process.env.NOTION_PROJECTS_DATA_SOURCE_ID || "b99acfce-7dcd-4619-8c2e-65a4c6fc7df7";
 
 export function makeClient() {
