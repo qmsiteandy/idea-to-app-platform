@@ -20,3 +20,8 @@ export async function login(_: { error?: string }, formData: FormData) {
   });
   redirect("/");
 }
+
+export async function logout() {
+  (await cookies()).delete(SESSION_COOKIE);
+  redirect("/login");
+}

@@ -4,20 +4,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-export type ProjectStatus =
-  | "discussing"
-  | "prd_review"
-  | "building"
-  | "live"
-  | "iterating";
+import { STATUS_LABEL, type ProjectStatus } from "./status";
 
-export const STATUS_LABEL: Record<ProjectStatus, string> = {
-  discussing: "討論中",
-  prd_review: "PRD 待審",
-  building: "建置中",
-  live: "已上線",
-  iterating: "迭代中",
-};
+export { STATUS_LABEL };
+export type { ProjectStatus };
 
 export type Project = {
   id: string;
@@ -27,7 +17,9 @@ export type Project = {
   repo_url: string | null;
   prod_url: string | null;
   current_version: string | null;
+  notion_url: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type NewProject = { name: string; idea: string };
@@ -67,7 +59,9 @@ function fromPage(page: PageObjectResponse): Project {
     repo_url: url(p.Repo),
     prod_url: url(p["Prod URL"]),
     current_version: plain(p.Version) || null,
+    notion_url: page.url,
     created_at: page.created_time,
+    updated_at: page.last_edited_time,
   };
 }
 
@@ -150,7 +144,9 @@ export async function createProject(input: NewProject): Promise<Project> {
     repo_url: null,
     prod_url: null,
     current_version: null,
+    notion_url: null,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   await writeLocal([project, ...(await readLocal())]);
   return project;

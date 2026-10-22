@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { logout } from "@/app/login/actions";
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+        <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur">
+          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <span className="grid size-7 place-items-center rounded-lg bg-neutral-900 text-sm text-white">
+                ◆
+              </span>
+              Idea to App
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/projects/new"
+                className="rounded-lg bg-neutral-900 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-700"
+              >
+                ＋ 新增專案
+              </Link>
+              <form action={logout}>
+                <button className="rounded-lg px-3 py-1.5 text-sm text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900">
+                  登出
+                </button>
+              </form>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+    </>
+  );
+}
