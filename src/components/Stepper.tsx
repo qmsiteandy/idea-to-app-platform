@@ -28,7 +28,7 @@ export function Stepper({ status, compact = false }: { status: ProjectStatus; co
                   ? "border-neutral-900 bg-neutral-900 text-white"
                   : active
                     ? "border-neutral-900 bg-white ring-4 ring-neutral-900/10"
-                    : "border-neutral-300 bg-white text-neutral-400",
+                    : "border-neutral-300 bg-white text-neutral-500",
               ].join(" ")}
             >
               {!compact && (done ? "✓" : i + 1)}
@@ -36,7 +36,7 @@ export function Stepper({ status, compact = false }: { status: ProjectStatus; co
             {compact ? (
               <span className="sr-only">{STATUS_LABEL[s]}</span>
             ) : (
-              <span className={`text-center text-xs ${active ? "font-semibold text-neutral-900" : "text-neutral-500"}`}>
+              <span className={`text-center text-xs ${active ? "font-semibold text-neutral-900" : "text-neutral-600"}`}>
                 {STATUS_LABEL[s]}
               </span>
             )}

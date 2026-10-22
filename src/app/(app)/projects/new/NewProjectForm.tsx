@@ -29,7 +29,7 @@ export function NewProjectForm({
 }) {
   const [state, formAction] = useActionState(action, {});
   return (
-    <form action={formAction} className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6">
+    <form action={formAction} className="space-y-5 rounded-xl border border-neutral-300 bg-white p-6">
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">專案名稱</span>
         <input
@@ -51,7 +51,7 @@ export function NewProjectForm({
           placeholder="這個專案要解決什麼問題？給誰用？"
           className={field}
         />
-        <span className="text-xs text-neutral-500">最多 1000 字，可以先留白。</span>
+        <span className="text-xs text-neutral-600">最多 1000 字，可以先留白。</span>
       </label>
       {state.error && (
         <p role="alert" className="text-sm text-red-600">
@@ -59,7 +59,7 @@ export function NewProjectForm({
         </p>
       )}
       <div className="flex items-center justify-end gap-3">
-        <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">
+        <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">
           取消
         </Link>
         <SubmitButton />

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3 text-sm">
-      <dt className="shrink-0 text-neutral-500">{label}</dt>
+      <dt className="shrink-0 text-neutral-600">{label}</dt>
       <dd className="min-w-0 break-words text-right [overflow-wrap:anywhere]">{children}</dd>
     </div>
   );
@@ -30,8 +30,8 @@ function ExternalLink({ href, label }: { href: string; label?: string }) {
   );
 }
 
-const NONE = <span className="text-neutral-500">尚未產生</span>;
-const NOT_SYNCED = <span className="text-neutral-500">尚未同步</span>;
+const NONE = <span className="text-neutral-600">尚未產生</span>;
+const NOT_SYNCED = <span className="text-neutral-600">尚未同步</span>;
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,7 +43,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-6">
-      <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">
+      <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">
         ← 專案列表
       </Link>
 
@@ -52,33 +52,33 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <StatusBadge status={project.status} />
       </div>
 
-      <section className="rounded-xl border border-neutral-200 bg-white p-6" aria-label="流程進度">
+      <section className="rounded-xl border border-neutral-300 bg-white p-6" aria-label="流程進度">
         <Stepper status={project.status} />
       </section>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
-          <section className="rounded-xl border border-neutral-200 bg-white p-6">
-            <h2 className="text-sm font-medium text-neutral-500">一句話構想</h2>
+          <section className="rounded-xl border border-neutral-300 bg-white p-6">
+            <h2 className="text-sm font-medium text-neutral-600">一句話構想</h2>
             <p className="mt-2 whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
-              {project.idea || <span className="text-neutral-500">尚未填寫構想</span>}
+              {project.idea || <span className="text-neutral-600">尚未填寫構想</span>}
             </p>
           </section>
 
           <section className="rounded-xl border border-neutral-900/10 bg-neutral-900 p-6 text-white">
-            <div className="text-xs font-medium uppercase tracking-wide text-neutral-400">下一步</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-neutral-200">下一步</div>
             <h2 className="mt-1 text-lg font-semibold">{next.title}</h2>
-            <p className="mt-1 text-sm text-neutral-300">{next.hint}</p>
+            <p className="mt-1 text-sm text-neutral-200">{next.hint}</p>
             {!next.available && (
-              <p className="mt-4 inline-block rounded-md bg-white/10 px-2.5 py-1 text-xs text-neutral-300">
+              <p className="mt-4 inline-block rounded-md bg-white/10 px-2.5 py-1 text-xs text-neutral-200">
                 此功能開發中，之後會在這裡直接開始
               </p>
             )}
           </section>
         </div>
 
-        <aside className="h-fit min-w-0 rounded-xl border border-neutral-200 bg-white px-5 py-2">
-          <h2 className="pt-3 text-sm font-medium text-neutral-500">專案資訊</h2>
+        <aside className="h-fit min-w-0 rounded-xl border border-neutral-300 bg-white px-5 py-2">
+          <h2 className="pt-3 text-sm font-medium text-neutral-600">專案資訊</h2>
           <dl className="divide-y divide-neutral-100">
             <Fact label="正式網址">
               {prodUrl ? <ExternalLink href={prodUrl} /> : NONE}

@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 
 function Stat({ label, value, hint }: { label: string; value: number; hint?: string }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <div className="text-sm text-neutral-500">{label}</div>
+    <div className="rounded-xl border border-neutral-300 bg-white p-4">
+      <div className="text-sm text-neutral-600">{label}</div>
       <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
-      {hint && <div className="mt-1 text-xs text-neutral-500">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-neutral-600">{hint}</div>}
     </div>
   );
 }
@@ -22,12 +22,12 @@ function ProjectCard({ p }: { p: Project }) {
   return (
     <Link
       href={`/projects/${p.id}`}
-      className="group flex min-w-0 flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 hover:shadow-sm"
+      className="group flex min-w-0 flex-col gap-4 rounded-xl border border-neutral-300 bg-white p-5 transition hover:border-neutral-500 hover:shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate font-semibold group-hover:underline">{p.name}</h2>
-          <p className="mt-1 line-clamp-2 min-h-10 break-words text-sm [overflow-wrap:anywhere] text-neutral-500">
+          <p className="mt-1 line-clamp-2 min-h-10 break-words text-sm [overflow-wrap:anywhere] text-neutral-600">
             {p.idea || "尚未填寫構想"}
           </p>
         </div>
@@ -37,11 +37,11 @@ function ProjectCard({ p }: { p: Project }) {
         <div className="flex-1">
           <Stepper status={p.status} compact />
         </div>
-        <span className="shrink-0 text-xs text-neutral-500">
+        <span className="shrink-0 text-xs text-neutral-600">
           第 {STATUS_ORDER.indexOf(p.status) + 1}／{STATUS_ORDER.length} 階段
         </span>
       </div>
-      <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
+      <div className="flex items-center justify-between gap-3 text-xs text-neutral-600">
         <span className="shrink-0">{p.current_version ? `版本 ${p.current_version}` : "尚無版本"}</span>
         {prodUrl ? (
           <span className="truncate text-emerald-700">● {hostOf(prodUrl)}</span>
@@ -75,7 +75,7 @@ export default async function Home({
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">專案</h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-600">
             {latest ? `最近更新 ${relativeTime(latest)}` : "從一個點子開始，建立你的第一個專案"}
           </p>
         </div>
@@ -98,7 +98,7 @@ export default async function Home({
         <Link
           href="/"
           aria-current={!filter ? "true" : undefined}
-          className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${!filter ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
+          className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${!filter ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-500"}`}
         >
           全部 {all.length}
         </Link>
@@ -107,7 +107,7 @@ export default async function Home({
             key={s}
             href={`/?status=${s}`}
             aria-current={filter === s ? "true" : undefined}
-            className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${filter === s ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${filter === s ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-500"}`}
           >
             <span className={`size-1.5 rounded-full ${STATUS_STYLE[s].dot}`} />
             {STATUS_LABEL[s]} {count(s)}
@@ -120,7 +120,7 @@ export default async function Home({
           <p className="font-medium">
             {all.length === 0 ? "還沒有專案" : `沒有「${filter ? STATUS_LABEL[filter] : ""}」的專案`}
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-600">
             {all.length === 0 ? "寫下一句話構想，就能建立第一個專案。" : "換一個篩選條件看看。"}
           </p>
           {all.length === 0 && (

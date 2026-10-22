@@ -9,12 +9,12 @@ export default function LoginPage() {
     <main className="px-4 py-16">
     <form
       action={action}
-      className="mx-auto w-full max-w-sm space-y-5 rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm"
+      className="mx-auto w-full max-w-sm space-y-5 rounded-2xl border border-neutral-300 bg-white p-8 shadow-sm"
     >
       <div className="space-y-1 text-center">
         <div className="mx-auto grid size-10 place-items-center rounded-xl bg-neutral-900 text-white">◆</div>
         <h1 className="pt-2 text-xl font-semibold">登入 Idea to App</h1>
-        <p className="text-sm text-neutral-500">輸入密碼以繼續</p>
+        <p className="text-sm text-neutral-600">輸入密碼以繼續</p>
       </div>
       <div className="space-y-2">
         <input

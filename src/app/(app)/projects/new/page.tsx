@@ -18,12 +18,12 @@ async function create(_prev: CreateState, formData: FormData): Promise<CreateSta
 export default function NewProject() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">
+      <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">
         ← 專案列表
       </Link>
       <div>
         <h1 className="text-2xl font-semibold">新增專案</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-600">
           先寫下名稱與一句話構想，之後 AI 會在需求訪談中幫你補完細節。
         </p>
       </div>

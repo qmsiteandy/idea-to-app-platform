@@ -24,10 +24,10 @@ export const STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export const STATUS_STYLE: Record<ProjectStatus, { badge: string; dot: string }> = {
   discussing: { badge: "bg-slate-100 text-slate-700", dot: "bg-slate-400" },
-  prd_review: { badge: "bg-amber-100 text-amber-800", dot: "bg-amber-500" },
-  building: { badge: "bg-blue-100 text-blue-800", dot: "bg-blue-500" },
-  live: { badge: "bg-emerald-100 text-emerald-800", dot: "bg-emerald-500" },
-  iterating: { badge: "bg-violet-100 text-violet-800", dot: "bg-violet-500" },
+  prd_review: { badge: "bg-amber-100 text-amber-900", dot: "bg-amber-500" },
+  building: { badge: "bg-blue-100 text-blue-900", dot: "bg-blue-500" },
+  live: { badge: "bg-emerald-100 text-emerald-900", dot: "bg-emerald-500" },
+  iterating: { badge: "bg-violet-100 text-violet-900", dot: "bg-violet-500" },
 };
 
 // 每個階段「下一步該做什麼」。AI 訪談、建置等功能開放前，誠實標示為即將推出。
