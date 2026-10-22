@@ -49,7 +49,13 @@ export async function writePrd(client, pageId, md) {
   try {
     await client.comments.create({
       parent: { page_id: pageId },
-      rich_text: richText(`PRD 已產生，請審閱。${link ? `平台連結：${link}` : ""}`),
+      rich_text: [
+        // @ 提及才會觸發 Notion 手機推播；沒設定使用者 ID 時退回一般留言。
+        ...(process.env.NOTION_NOTIFY_USER_ID
+          ? [{ type: "mention", mention: { user: { id: process.env.NOTION_NOTIFY_USER_ID } } }, { type: "text", text: { content: " " } }]
+          : []),
+        ...richText(`PRD 已產生，請審閱。${link ? `平台連結：${link}` : ""}`),
+      ],
     });
   } catch (err) {
     // 通知失敗不應讓已寫好的 PRD 算作失敗（常見原因：integration 未開啟「插入留言」權限）。
