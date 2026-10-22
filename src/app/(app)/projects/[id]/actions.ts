@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getProject, replacePrd, setStatus } from "@/lib/db";
+import { UserError, getProject, replacePrd, setStatus } from "@/lib/db";
 import { PRD_MAX_LENGTH, parseMarkdown } from "@/lib/prd";
 
 export type PrdState = { error?: string; markdown?: string };
@@ -13,8 +13,9 @@ export async function savePrd(id: string, _prev: PrdState, formData: FormData): 
   if (!(await getProject(id))) return { markdown, error: "找不到這個專案。" };
   try {
     await replacePrd(id, markdown);
-  } catch {
-    return { markdown, error: "儲存失敗，請稍後再試。" };
+  } catch (e) {
+    revalidatePath(`/projects/${id}`);
+    return { markdown, error: e instanceof UserError ? e.message : "儲存失敗，請稍後再試。" };
   }
   revalidatePath(`/projects/${id}`);
   return {};

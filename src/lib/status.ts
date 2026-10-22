@@ -39,7 +39,7 @@ export const NEXT_STEP: Record<ProjectStatus, { title: string; hint: string; ava
   },
   prd_review: {
     title: "審核並修改 PRD",
-    hint: "確認產出的 PRD 與功能清單，沒問題就按「開始建立專案」。",
+    hint: "確認產出的 PRD 與功能清單，沒問題就按「核准 PRD」。",
     available: false,
   },
   building: {

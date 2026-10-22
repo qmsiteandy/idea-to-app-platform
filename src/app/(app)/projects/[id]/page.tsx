@@ -40,7 +40,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const project = await getProject(id);
   if (!project) notFound();
-  const prd = await getPrd(id);
+  const { blocks: prd, error: prdError } = await getPrd(id);
   const next = NEXT_STEP[project.status];
   const prodUrl = safeHttpUrl(project.prod_url);
   const repoUrl = safeHttpUrl(project.repo_url);
@@ -72,6 +72,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           <PrdPanel
             key={`${project.updated_at}-${project.status}`}
             blocks={prd}
+            loadError={prdError}
             markdown={toMarkdown(prd)}
             canApprove={project.status === "prd_review"}
             save={savePrd.bind(null, id)}

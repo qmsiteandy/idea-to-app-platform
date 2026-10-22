@@ -15,7 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/projects/new"
-                className="hidden min-h-11 items-center rounded-lg border border-neutral-300 px-3.5 text-sm font-medium text-neutral-900 transition hover:border-neutral-500 sm:inline-flex sm:min-h-0 sm:py-1.5"
+                className="inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3.5 text-sm font-medium text-neutral-900 transition hover:border-neutral-500 sm:min-h-0 sm:py-1.5"
               >
                 新增專案
               </Link>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createIdea } from "@/lib/db";
+import { UserError, createIdea } from "@/lib/db";
 import { IdeaForm, type IdeaState } from "./IdeaForm";
 
 async function submit(_prev: IdeaState, formData: FormData): Promise<IdeaState> {
@@ -16,8 +16,8 @@ async function submit(_prev: IdeaState, formData: FormData): Promise<IdeaState> 
   if (target.length > 80) return { ...keep, error: "目標專案最多 80 字。" };
   try {
     await createIdea({ title, details, type, target });
-  } catch {
-    return { ...keep, error: "送出失敗，請稍後再試。" };
+  } catch (e) {
+    return { ...keep, error: e instanceof UserError ? e.message : "送出失敗，請稍後再試。" };
   }
   return { done: true };
 }

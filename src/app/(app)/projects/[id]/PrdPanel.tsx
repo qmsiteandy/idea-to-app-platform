@@ -68,12 +68,14 @@ function Blocks({ blocks }: { blocks: PrdBlock[] }) {
 
 export function PrdPanel({
   blocks,
+  loadError,
   markdown,
   canApprove,
   save,
   approve,
 }: {
   blocks: PrdBlock[];
+  loadError: boolean;
   markdown: string;
   canApprove: boolean;
   save: (prev: PrdState, formData: FormData) => Promise<PrdState>;
@@ -87,14 +89,18 @@ export function PrdPanel({
     <section className="rounded-xl border border-neutral-300 bg-white p-6" aria-label="PRD">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-medium text-neutral-600">PRD（產品需求文件）</h2>
-        {!editing && (
+        {!editing && !loadError && (
           <button type="button" onClick={() => setEditing(true)} className={`${secondary} !py-1.5`}>
             {blocks.length ? "編輯" : "撰寫"}
           </button>
         )}
       </div>
 
-      {editing ? (
+      {loadError ? (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          讀取 PRD 失敗，請重新整理再試；為避免覆蓋內容，暫時無法編輯。
+        </p>
+      ) : editing ? (
         <form action={saveAction} className="mt-4 space-y-3">
           <label className="block space-y-1.5">
             <span className="text-sm font-medium">PRD 內容（Markdown）</span>
@@ -106,7 +112,7 @@ export function PrdPanel({
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm outline-none transition focus:border-neutral-900 focus:ring-4 focus:ring-neutral-900/10"
             />
             <span className="text-xs text-neutral-600">
-              支援 # 標題、段落、- 項目、1. 編號、- [ ] 待辦。儲存會取代整份 PRD。
+              支援 # 標題、段落、- 項目、1. 編號、- [ ] 待辦。儲存會取代整份 PRD；粗體、連結等格式會存成純文字。
             </span>
           </label>
           {saveState.error && (
@@ -129,7 +135,7 @@ export function PrdPanel({
         <p className="mt-4 text-sm text-neutral-600">尚未產生 PRD。</p>
       )}
 
-      {canApprove && !editing && (
+      {canApprove && !editing && !loadError && (
         <form action={approveAction} className="mt-6 space-y-3 border-t border-neutral-200 pt-4">
           <p className="text-sm text-neutral-600">
             核准後狀態會改為「建置中」。注意：自動建置功能仍在開發中，核准後目前不會自動開始建置。

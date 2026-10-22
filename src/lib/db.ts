@@ -4,7 +4,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { parseMarkdown, toMarkdown, toNotionBlocks, type PrdBlock, type PrdBlockType } from "./prd";
+import { parseMarkdown, toNotionBlocks, type PrdBlock, type PrdBlockType } from "./prd";
 import { STATUS_LABEL, STATUS_ORDER, type ProjectStatus } from "./status";
 
 export { STATUS_LABEL };
@@ -163,6 +163,9 @@ export async function createProject(input: NewProject): Promise<Project> {
   return project;
 }
 
+// 訊息可直接顯示給使用者的錯誤
+export class UserError extends Error {}
+
 // ---- 新增想法（收件匣） ----
 export type NewIdea = { title: string; details: string; type: "新專案" | "新功能"; target: string };
 
@@ -171,6 +174,7 @@ const INBOX_FILE = path.join(process.cwd(), ".data", "inbox.json");
 export async function createIdea(input: NewIdea): Promise<void> {
   const token = process.env.NOTION_TOKEN;
   const inboxId = process.env.NOTION_INBOX_DATA_SOURCE_ID;
+  if (token && !inboxId) throw new UserError("尚未設定 NOTION_INBOX_DATA_SOURCE_ID，無法送出想法。");
   if (token && inboxId) {
     await new Client({ auth: token }).pages.create({
       parent: { type: "data_source_id", data_source_id: inboxId },
@@ -198,33 +202,40 @@ const TEXT_BLOCKS = new Set<PrdBlockType>([
   "heading_1", "heading_2", "heading_3", "paragraph", "bulleted_list_item", "numbered_list_item", "to_do",
 ]);
 
-export async function getPrd(id: string): Promise<PrdBlock[]> {
-  const n = notion();
-  if (!n) return parseMarkdown((await readLocal()).find((p) => p.id === id)?.prd ?? "");
-  const out: PrdBlock[] = [];
-  try {
-    let cursor: string | undefined;
-    do {
-      const res = await n.client.blocks.children.list({ block_id: id, start_cursor: cursor, page_size: 100 });
-      for (const b of res.results as BlockObjectResponse[]) {
-        if (!TEXT_BLOCKS.has(b.type as PrdBlockType)) continue;
-        const body = (b as unknown as Record<string, { rich_text: { plain_text: string }[]; checked?: boolean }>)[b.type];
-        out.push({
-          type: b.type as PrdBlockType,
-          text: body.rich_text.map((t) => t.plain_text).join(""),
-          ...(b.type === "to_do" ? { checked: !!body.checked } : {}),
-        });
-      }
-      cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
-    } while (cursor);
-  } catch {
-    return [];
-  }
-  return out;
+export type PrdResult = { blocks: PrdBlock[]; error: boolean };
+
+// 只回傳可顯示且可安全取代的區塊：支援的 7 種文字區塊，且沒有子區塊。
+// 讀取失敗時回傳 error: true，絕不當成空 PRD。
+function prdBlockOf(b: BlockObjectResponse): PrdBlock | null {
+  if (!TEXT_BLOCKS.has(b.type as PrdBlockType) || b.has_children) return null;
+  const body = (b as unknown as Record<string, { rich_text: { plain_text: string }[]; checked?: boolean }>)[b.type];
+  return {
+    type: b.type as PrdBlockType,
+    text: body.rich_text.map((t) => t.plain_text).join(""),
+    ...(b.type === "to_do" ? { checked: !!body.checked } : {}),
+  };
 }
 
-export async function getPrdMarkdown(id: string) {
-  return toMarkdown(await getPrd(id));
+async function listTopBlocks(n: NonNullable<ReturnType<typeof notion>>, id: string) {
+  const all: BlockObjectResponse[] = [];
+  let cursor: string | undefined;
+  do {
+    const res = await n.client.blocks.children.list({ block_id: id, start_cursor: cursor, page_size: 100 });
+    all.push(...(res.results.filter((b) => "type" in b) as BlockObjectResponse[]));
+    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+  } while (cursor);
+  return all;
+}
+
+export async function getPrd(id: string): Promise<PrdResult> {
+  const n = notion();
+  if (!n) return { blocks: parseMarkdown((await readLocal()).find((p) => p.id === id)?.prd ?? ""), error: false };
+  try {
+    const blocks = (await listTopBlocks(n, id)).map(prdBlockOf).filter((b): b is PrdBlock => !!b);
+    return { blocks, error: false };
+  } catch {
+    return { blocks: [], error: true };
+  }
 }
 
 // 取代整份 PRD：先寫入新內容再刪舊區塊，中途失敗也不會讓內容遺失
@@ -240,18 +251,21 @@ export async function replacePrd(id: string, md: string): Promise<void> {
     await writeLocal(rows);
     return;
   }
-  const oldIds: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const res = await n.client.blocks.children.list({ block_id: id, start_cursor: cursor, page_size: 100 });
-    oldIds.push(...res.results.map((b) => b.id));
-    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
-  } while (cursor);
+  // 只刪除 getPrd 能顯示的區塊；其他類型（表格、程式碼、callout、子頁面…）與有子區塊的一律保留
+  const oldIds = (await listTopBlocks(n, id)).filter((b) => prdBlockOf(b)).map((b) => b.id);
   const notionBlocks = toNotionBlocks(blocks);
   for (let i = 0; i < notionBlocks.length; i += 100) {
     await n.client.blocks.children.append({ block_id: id, children: notionBlocks.slice(i, i + 100) });
   }
-  for (const b of oldIds) await n.client.blocks.delete({ block_id: b });
+  let failed = 0;
+  for (const b of oldIds) {
+    try {
+      await n.client.blocks.delete({ block_id: b });
+    } catch {
+      failed++;
+    }
+  }
+  if (failed) throw new UserError(`新內容已儲存，但有 ${failed} 個舊區塊刪除失敗，頁面可能出現重複內容，請到 Notion 手動清理。`);
 }
 
 export async function setStatus(id: string, status: ProjectStatus): Promise<void> {
