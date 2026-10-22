@@ -10,7 +10,7 @@ export default async function Home() {
       <h1 className="text-2xl font-semibold">專案</h1>
       {storageMode() === "local-file" && (
         <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
-          尚未設定 Supabase，資料暫存在本機檔案，部署後不會保留。
+          尚未設定 Notion，資料暫存在本機檔案，部署後不會保留。
         </p>
       )}
       {projects.length === 0 ? (

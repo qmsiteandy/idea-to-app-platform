@@ -12,10 +12,14 @@ npm run dev
 
 未設定 Supabase 時，資料會暫存在 `.data/projects.json`（僅供本機開發）。
 
-## 資料庫
+## 資料存放
 
-在 Supabase SQL editor 執行 `supabase/schema.sql`，再設定 `SUPABASE_URL` 與 `SUPABASE_SERVICE_ROLE_KEY`。
+所有資料存在 Notion 的「專案」資料庫，平台是唯一的編輯入口，Notion 為唯讀檢視。
+
+1. 到 https://www.notion.so/profile/integrations 建立 internal integration，複製 token。
+2. 在 Notion 開啟「專案 Projects」資料庫，右上角「…」→ Connections，加入該 integration。
+3. 設定 `NOTION_TOKEN` 與 `NOTION_PROJECTS_DATA_SOURCE_ID`。
 
 ## 部署
 
-匯入 Vercel，設定 `.env.example` 內的四個環境變數即可。
+匯入 Vercel，設定 `.env.example` 內的環境變數即可。

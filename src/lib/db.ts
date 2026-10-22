@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { Client, isFullPage } from "@notionhq/client";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -26,17 +27,48 @@ export type Project = {
   repo_url: string | null;
   prod_url: string | null;
   current_version: string | null;
-  notion_page_id: string | null;
   created_at: string;
 };
 
 export type NewProject = { name: string; idea: string };
 
-// 有設定 Supabase 就用 Supabase；沒有就退回本機 JSON 檔，只供本機開發使用。
-function supabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
+// 資料存放在 Notion 的「專案」資料庫（id 即 Notion 頁面 id）。
+// 沒設定 NOTION_TOKEN 時退回本機 JSON 檔，只供本機開發使用。
+const STATUS_BY_LABEL = Object.fromEntries(
+  Object.entries(STATUS_LABEL).map(([k, v]) => [v, k as ProjectStatus]),
+) as Record<string, ProjectStatus>;
+
+function notion() {
+  const token = process.env.NOTION_TOKEN;
+  const dataSourceId = process.env.NOTION_PROJECTS_DATA_SOURCE_ID;
+  return token && dataSourceId ? { client: new Client({ auth: token }), dataSourceId } : null;
+}
+
+function editLink(id: string) {
+  const base = process.env.APP_URL?.replace(/\/$/, "");
+  return base ? `${base}/projects/${id}` : null;
+}
+
+const text = (v: string) => (v ? [{ type: "text" as const, text: { content: v.slice(0, 2000) } }] : []);
+
+function fromPage(page: PageObjectResponse): Project {
+  const p = page.properties;
+  const plain = (prop: unknown): string => {
+    const items = (prop as { title?: { plain_text: string }[]; rich_text?: { plain_text: string }[] }) ?? {};
+    return (items.title ?? items.rich_text ?? []).map((t) => t.plain_text).join("");
+  };
+  const url = (prop: unknown) => (prop as { url?: string | null } | undefined)?.url ?? null;
+  const status = (p.Status as { select?: { name: string } | null } | undefined)?.select?.name;
+  return {
+    id: page.id,
+    name: plain(p.Name),
+    idea: plain(p.Idea),
+    status: (status && STATUS_BY_LABEL[status]) || "discussing",
+    repo_url: url(p.Repo),
+    prod_url: url(p["Prod URL"]),
+    current_version: plain(p.Version) || null,
+    created_at: page.created_time,
+  };
 }
 
 const LOCAL_FILE = path.join(process.cwd(), ".data", "projects.json");
@@ -54,43 +86,61 @@ async function writeLocal(projects: Project[]) {
   await fs.writeFile(LOCAL_FILE, JSON.stringify(projects, null, 2));
 }
 
-export function storageMode(): "supabase" | "local-file" {
-  return supabase() ? "supabase" : "local-file";
+export function storageMode(): "notion" | "local-file" {
+  return notion() ? "notion" : "local-file";
 }
 
 export async function listProjects(): Promise<Project[]> {
-  const db = supabase();
-  if (db) {
-    const { data, error } = await db
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data as Project[];
+  const n = notion();
+  if (n) {
+    const pages: PageObjectResponse[] = [];
+    let cursor: string | undefined;
+    do {
+      const res = await n.client.dataSources.query({
+        data_source_id: n.dataSourceId,
+        start_cursor: cursor,
+        sorts: [{ timestamp: "created_time", direction: "descending" }],
+      });
+      pages.push(...res.results.filter(isFullPage));
+      cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+    } while (cursor);
+    return pages.map(fromPage);
   }
   return (await readLocal()).sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-  const db = supabase();
-  if (db) {
-    const { data, error } = await db.from("projects").select("*").eq("id", id).maybeSingle();
-    if (error) throw new Error(error.message);
-    return (data as Project | null) ?? null;
+  const n = notion();
+  if (n) {
+    try {
+      const page = await n.client.pages.retrieve({ page_id: id });
+      return isFullPage(page) && !page.in_trash ? fromPage(page) : null;
+    } catch {
+      return null;
+    }
   }
   return (await readLocal()).find((p) => p.id === id) ?? null;
 }
 
 export async function createProject(input: NewProject): Promise<Project> {
-  const db = supabase();
-  if (db) {
-    const { data, error } = await db
-      .from("projects")
-      .insert({ name: input.name, idea: input.idea, status: "discussing" })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return data as Project;
+  const n = notion();
+  if (n) {
+    const page = await n.client.pages.create({
+      parent: { type: "data_source_id", data_source_id: n.dataSourceId },
+      properties: {
+        Name: { title: text(input.name) },
+        Idea: { rich_text: text(input.idea) },
+        Status: { select: { name: STATUS_LABEL.discussing } },
+      },
+    });
+    const link = editLink(page.id);
+    if (link) {
+      await n.client.pages.update({
+        page_id: page.id,
+        properties: { "Edit in platform": { url: link } },
+      });
+    }
+    return fromPage(page as PageObjectResponse);
   }
   const project: Project = {
     id: randomUUID(),
@@ -100,7 +150,6 @@ export async function createProject(input: NewProject): Promise<Project> {
     repo_url: null,
     prod_url: null,
     current_version: null,
-    notion_page_id: null,
     created_at: new Date().toISOString(),
   };
   await writeLocal([project, ...(await readLocal())]);
