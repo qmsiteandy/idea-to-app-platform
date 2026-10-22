@@ -4,7 +4,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { STATUS_LABEL, type ProjectStatus } from "./status";
+import { STATUS_LABEL, STATUS_ORDER, type ProjectStatus } from "./status";
 
 export { STATUS_LABEL };
 export type { ProjectStatus };
@@ -53,7 +53,7 @@ function fromPage(page: PageObjectResponse): Project {
   const status = (p.Status as { select?: { name: string } | null } | undefined)?.select?.name;
   return {
     id: page.id,
-    name: plain(p.Name),
+    name: plain(p.Name) || UNNAMED,
     idea: plain(p.Idea),
     status: (status && STATUS_BY_LABEL[status]) || "discussing",
     repo_url: url(p.Repo),
@@ -65,11 +65,20 @@ function fromPage(page: PageObjectResponse): Project {
   };
 }
 
+const UNNAMED = "未命名專案";
+
 const LOCAL_FILE = path.join(process.cwd(), ".data", "projects.json");
 
+// 本機檔案可能被手動編輯，讀入時正規化成與 Notion 模式一致
 async function readLocal(): Promise<Project[]> {
   try {
-    return JSON.parse(await fs.readFile(LOCAL_FILE, "utf8"));
+    const rows: Project[] = JSON.parse(await fs.readFile(LOCAL_FILE, "utf8"));
+    return rows.map((p) => ({
+      ...p,
+      name: p.name || UNNAMED,
+      status: STATUS_ORDER.includes(p.status) ? p.status : "discussing",
+      current_version: p.current_version || null,
+    }));
   } catch {
     return [];
   }

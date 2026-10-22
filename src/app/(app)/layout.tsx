@@ -15,12 +15,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/projects/new"
-                className="rounded-lg bg-neutral-900 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-700"
+                className="inline-flex min-h-11 items-center rounded-lg bg-neutral-900 px-3.5 text-sm sm:min-h-0 sm:py-1.5 font-medium text-white transition hover:bg-neutral-700"
               >
                 ＋ 新增專案
               </Link>
               <form action={logout}>
-                <button className="rounded-lg px-3 py-1.5 text-sm text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900">
+                <button className="min-h-11 rounded-lg px-3 text-sm sm:min-h-0 sm:py-1.5 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900">
                   登出
                 </button>
               </form>

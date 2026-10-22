@@ -2,7 +2,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Stepper } from "@/components/Stepper";
 import { listProjects, storageMode, type Project } from "@/lib/db";
-import { hostOf, relativeTime } from "@/lib/format";
+import { hostOf, relativeTime, safeHttpUrl } from "@/lib/format";
 import { STATUS_LABEL, STATUS_ORDER, STATUS_STYLE, type ProjectStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -12,31 +12,39 @@ function Stat({ label, value, hint }: { label: string; value: number; hint?: str
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
       <div className="text-sm text-neutral-500">{label}</div>
       <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
-      {hint && <div className="mt-1 text-xs text-neutral-400">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-neutral-500">{hint}</div>}
     </div>
   );
 }
 
 function ProjectCard({ p }: { p: Project }) {
+  const prodUrl = safeHttpUrl(p.prod_url);
   return (
     <Link
       href={`/projects/${p.id}`}
-      className="group flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 hover:shadow-sm"
+      className="group flex min-w-0 flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 hover:shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate font-semibold group-hover:underline">{p.name}</h2>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-neutral-500">
+          <p className="mt-1 line-clamp-2 min-h-10 break-words text-sm [overflow-wrap:anywhere] text-neutral-500">
             {p.idea || "尚未填寫構想"}
           </p>
         </div>
         <StatusBadge status={p.status} />
       </div>
-      <Stepper status={p.status} compact />
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <Stepper status={p.status} compact />
+        </div>
+        <span className="shrink-0 text-xs text-neutral-500">
+          第 {STATUS_ORDER.indexOf(p.status) + 1}／{STATUS_ORDER.length} 階段
+        </span>
+      </div>
       <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
-        <span>{p.current_version ? `版本 ${p.current_version}` : "尚無版本"}</span>
-        {p.prod_url ? (
-          <span className="truncate text-emerald-700">● {hostOf(p.prod_url)}</span>
+        <span className="shrink-0">{p.current_version ? `版本 ${p.current_version}` : "尚無版本"}</span>
+        {prodUrl ? (
+          <span className="truncate text-emerald-700">● {hostOf(prodUrl)}</span>
         ) : (
           <span>更新於 {relativeTime(p.updated_at)}</span>
         )}
@@ -81,7 +89,7 @@ export default async function Home({
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="總覽">
         <Stat label="全部專案" value={all.length} />
-        <Stat label="已上線" value={count("live")} hint="有正式網址可訪問" />
+        <Stat label="已上線" value={count("live")} hint="狀態為已上線" />
         <Stat label="進行中" value={active} hint="建置中或迭代中" />
         <Stat label="待處理" value={count("discussing") + count("prd_review")} hint="等你討論或審核" />
       </section>
@@ -89,7 +97,8 @@ export default async function Home({
       <nav className="flex flex-wrap gap-2" aria-label="依階段篩選">
         <Link
           href="/"
-          className={`rounded-full border px-3 py-1 text-sm transition ${!filter ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
+          aria-current={!filter ? "true" : undefined}
+          className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${!filter ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
         >
           全部 {all.length}
         </Link>
@@ -97,7 +106,8 @@ export default async function Home({
           <Link
             key={s}
             href={`/?status=${s}`}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition ${filter === s ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
+            aria-current={filter === s ? "true" : undefined}
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition sm:min-h-0 sm:py-1 ${filter === s ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400"}`}
           >
             <span className={`size-1.5 rounded-full ${STATUS_STYLE[s].dot}`} />
             {STATUS_LABEL[s]} {count(s)}

@@ -6,6 +6,15 @@ export async function middleware(req: NextRequest) {
     req.cookies.get(SESSION_COOKIE)?.value,
     process.env.SESSION_SECRET,
   );
+  const isLogin = req.nextUrl.pathname === "/login";
+  if (isLogin) {
+    // 已登入的 GET 請求導回首頁；其他情況（含登入 action 的 POST）放行
+    if (!ok || req.method !== "GET") return NextResponse.next();
+    const home = req.nextUrl.clone();
+    home.pathname = "/";
+    home.search = "";
+    return NextResponse.redirect(home);
+  }
   if (ok) return NextResponse.next();
   const url = req.nextUrl.clone();
   url.pathname = "/login";
@@ -14,5 +23,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

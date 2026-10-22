@@ -32,3 +32,14 @@ export function hostOf(url: string): string {
     return url;
   }
 }
+
+// 只允許 http(s) 網址，避免 javascript: 等協定被當成連結
+export function safeHttpUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}

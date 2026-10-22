@@ -24,6 +24,7 @@ export default function LoginPage() {
           autoFocus
           autoComplete="current-password"
           placeholder="密碼"
+          aria-label="密碼"
           aria-invalid={Boolean(state.error)}
           className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 outline-none transition focus:border-neutral-900 focus:ring-4 focus:ring-neutral-900/10"
         />

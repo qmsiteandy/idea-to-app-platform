@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Stepper } from "@/components/Stepper";
 import { getProject } from "@/lib/db";
-import { hostOf, relativeTime, shortDate } from "@/lib/format";
+import { hostOf, relativeTime, safeHttpUrl, shortDate } from "@/lib/format";
 import { NEXT_STEP } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   return (
     <div className="flex items-start justify-between gap-4 py-3 text-sm">
       <dt className="shrink-0 text-neutral-500">{label}</dt>
-      <dd className="min-w-0 break-words text-right">{children}</dd>
+      <dd className="min-w-0 break-words text-right [overflow-wrap:anywhere]">{children}</dd>
     </div>
   );
 }
@@ -30,13 +30,16 @@ function ExternalLink({ href, label }: { href: string; label?: string }) {
   );
 }
 
-const NONE = <span className="text-neutral-400">尚未產生</span>;
+const NONE = <span className="text-neutral-500">尚未產生</span>;
+const NOT_SYNCED = <span className="text-neutral-500">尚未同步</span>;
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const project = await getProject(id);
   if (!project) notFound();
   const next = NEXT_STEP[project.status];
+  const prodUrl = safeHttpUrl(project.prod_url);
+  const repoUrl = safeHttpUrl(project.repo_url);
 
   return (
     <div className="space-y-6">
@@ -44,8 +47,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         ← 專案列表
       </Link>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">{project.name}</h1>
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <h1 className="min-w-0 break-words text-2xl font-semibold [overflow-wrap:anywhere]">{project.name}</h1>
         <StatusBadge status={project.status} />
       </div>
 
@@ -53,12 +56,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <Stepper status={project.status} />
       </section>
 
-      <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-6">
           <section className="rounded-xl border border-neutral-200 bg-white p-6">
             <h2 className="text-sm font-medium text-neutral-500">一句話構想</h2>
-            <p className="mt-2 whitespace-pre-wrap leading-relaxed">
-              {project.idea || <span className="text-neutral-400">尚未填寫構想</span>}
+            <p className="mt-2 whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
+              {project.idea || <span className="text-neutral-500">尚未填寫構想</span>}
             </p>
           </section>
 
@@ -74,22 +77,22 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           </section>
         </div>
 
-        <aside className="h-fit rounded-xl border border-neutral-200 bg-white px-5 py-2">
+        <aside className="h-fit min-w-0 rounded-xl border border-neutral-200 bg-white px-5 py-2">
           <h2 className="pt-3 text-sm font-medium text-neutral-500">專案資訊</h2>
           <dl className="divide-y divide-neutral-100">
             <Fact label="正式網址">
-              {project.prod_url ? <ExternalLink href={project.prod_url} /> : NONE}
+              {prodUrl ? <ExternalLink href={prodUrl} /> : NONE}
             </Fact>
             <Fact label="GitHub">
-              {project.repo_url ? (
-                <ExternalLink href={project.repo_url} label={project.repo_url.replace(/^https?:\/\/github\.com\//, "")} />
+              {repoUrl ? (
+                <ExternalLink href={repoUrl} label={repoUrl.replace(/^https?:\/\/github\.com\//, "")} />
               ) : (
                 NONE
               )}
             </Fact>
             <Fact label="版本">{project.current_version ?? NONE}</Fact>
             <Fact label="Notion 頁面">
-              {project.notion_url ? <ExternalLink href={project.notion_url} label="開啟" /> : <span className="text-neutral-400">—</span>}
+              {project.notion_url ? <ExternalLink href={project.notion_url} label="開啟" /> : NOT_SYNCED}
             </Fact>
             <Fact label="建立">{shortDate(project.created_at)}</Fact>
             <Fact label="最後更新">{relativeTime(project.updated_at)}</Fact>
