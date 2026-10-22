@@ -82,6 +82,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             approve={approvePrd.bind(null, id)}
           />
 
+          {project.status !== "discussing" && (
           <section className="rounded-xl border border-neutral-900/10 bg-neutral-900 p-6 text-white">
             <div className="text-xs font-medium uppercase tracking-wide text-neutral-200">下一步</div>
             <h2 className="mt-1 text-lg font-semibold">{next.title}</h2>
@@ -92,6 +93,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               </p>
             )}
           </section>
+          )}
         </div>
 
         <aside className="h-fit min-w-0 rounded-xl border border-neutral-300 bg-white px-5 py-2">

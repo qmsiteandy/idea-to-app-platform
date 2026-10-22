@@ -6,6 +6,7 @@ import path from "node:path";
 import { log } from "./logbuf.mjs";
 
 const DENY = "Bash,PowerShell,Edit,Write,NotebookEdit,Read,Glob,Grep,WebFetch,WebSearch,Task,Agent";
+const MAX_LINE = 5 * 1024 * 1024;
 const UUID = /^[0-9a-fA-F-]{8,64}$/;
 
 const short = (s, n = 300) => {
@@ -48,7 +49,7 @@ function killTree(child) {
 // 回傳 { text, sessionId }；失敗時 throw Error（訊息可直接寫進聊天室）
 export function runClaude(cfg, { cwd, prompt, sessionId }) {
   mkdirSync(cwd, { recursive: true });
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "dontAsk", "--disallowedTools", DENY];
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "dontAsk", "--disallowedTools", DENY, "--strict-mcp-config", "--setting-sources", "project", "--disable-slash-commands"];
   if (sessionId) {
     if (!UUID.test(sessionId)) return Promise.reject(new Error("session_id 格式不正確"));
     args.push("--resume", sessionId);
@@ -94,6 +95,10 @@ export function runClaude(cfg, { cwd, prompt, sessionId }) {
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (d) => {
       buf += d;
+      if (buf.length > MAX_LINE && !buf.includes("\n")) {
+        log("claude 輸出單行過長，已丟棄");
+        buf = "";
+      }
       let i;
       while ((i = buf.indexOf("\n")) >= 0) {
         onLine(buf.slice(0, i));

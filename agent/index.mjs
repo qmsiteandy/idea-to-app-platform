@@ -27,7 +27,16 @@ let stopping = false;
 const busy = () => !!running || queue.length > 0;
 
 function enqueue(job) {
-  if (queue.some((j) => j.id === job.id && j.kind === job.kind) || (running?.id === job.id && running.kind === job.kind)) return false;
+  if (job.kind === "chat") {
+    // 聊天訊息絕不丟棄：同一專案已在排隊、尚未開始的訊息合併成一次 Claude 呼叫
+    const pending = queue.find((j) => j.id === job.id && j.kind === "chat");
+    if (pending) {
+      pending.text += `\n\n${job.text}`;
+      return true;
+    }
+  } else if (queue.some((j) => j.id === job.id && j.kind === job.kind) || (running?.id === job.id && running.kind === job.kind)) {
+    return false;
+  }
   queue.push(job);
   pump();
   return true;
@@ -62,9 +71,12 @@ async function handle(job) {
   const { text, sessionId } = await runClaude(cfg, { cwd, prompt, sessionId: job.kind === "start" ? null : s.sessionId });
   s.sessionId = sessionId ?? s.sessionId;
 
-  const m = /<PRD>([\s\S]*?)<\/PRD>/i.exec(text);
+  // 只有「同時有 <PRD> 與 </PRD>，且結尾標籤是回覆的最後內容」才視為 PRD
+  const trimmed = text.trimEnd();
+  const open = trimmed.lastIndexOf("<PRD>");
+  const m = open >= 0 && /<\/PRD>$/i.test(trimmed) ? { 1: trimmed.slice(open + 5, -6), 0: trimmed.slice(open) } : null;
   if (m) {
-    const visible = text.replace(m[0], "").trim();
+    const visible = trimmed.slice(0, open).trim();
     await store.add(s, "assistant", `${visible ? `${visible}\n\n` : ""}（PRD 已整理完成，正在寫入 Notion…）`);
     await finalizePrd(s, m[1].trim());
     return;
@@ -86,8 +98,9 @@ async function finalizePrd(s, md) {
     await store.add(s, "system", `PRD 已寫入 Notion（${n} 個區塊），狀態改為「PRD 待審」。`);
     log(`PRD 已寫入 ${s.id}`);
   } catch (e) {
+    log(`PRD 寫入失敗 ${s.id}：${errMsg(e)}`);
     await store.add(s, "system", `PRD 寫入 Notion 失敗：${errMsg(e)}。可再按一次「產生 PRD」重試。`);
-    throw e;
+    return; // 已通知使用者，不要再丟出去造成重複訊息
   }
   await notion.comment(s.id, "PRD 已產生，請審閱。").catch((e) => log(`Notion 留言失敗：${errMsg(e)}`));
 }
@@ -178,8 +191,8 @@ server.on("error", (e) => {
   console.error(`HTTP 伺服器錯誤：${e.message}`);
   process.exit(1);
 });
-server.listen(cfg.port, () => {
-  log(`agent 啟動，監聽 http://localhost:${cfg.port}${cfg.fake ? "（AGENT_FAKE_NOTION 測試模式）" : ""}`);
+server.listen(cfg.port, "127.0.0.1", () => {
+  log(`agent 啟動，監聽 http://127.0.0.1:${cfg.port}${cfg.fake ? "（AGENT_FAKE_NOTION 測試模式）" : ""}`);
 });
 
 await resume();

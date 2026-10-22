@@ -41,7 +41,7 @@
    ```powershell
    node agent/index.mjs
    ```
-   看到「agent 啟動，監聽 http://localhost:8787」即成功；按 Ctrl+C 結束。
+   看到「agent 啟動，監聽 http://127.0.0.1:8787」（只綁本機；AGENT_TOKEN 至少 24 字元）即成功；按 Ctrl+C 結束。
 6. 另開一個 PowerShell 視窗，用 Cloudflare Tunnel 把它公開給平台（快速模式，不需帳號）：
    ```powershell
    winget install Cloudflare.cloudflared
@@ -75,7 +75,7 @@ AGENT_TOKEN 是唯一的防護，請務必使用夠長的隨機字串；平台�
 
 ## 注意：Claude 旗標
 
-本 agent 只使用在 `claude --help`（Claude Code 2.1.x）確認存在的旗標：`-p`、`--output-format`、`--verbose`、`--resume`、`--permission-mode`、`--disallowedTools`。
+本 agent 只使用在 `claude --help`（Claude Code 2.1.x）確認存在的旗標：`-p`、`--output-format`、`--verbose`、`--resume`、`--permission-mode`、`--disallowedTools`、`--strict-mcp-config`、`--setting-sources`、`--disable-slash-commands`。
 
 ## 測試（不需 Notion、不需登入）
 

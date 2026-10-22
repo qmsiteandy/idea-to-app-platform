@@ -18,9 +18,9 @@ function readBody(req, limit = 16 * 1024) {
     req.on("data", (c) => {
       size += c.length;
       if (size > limit) {
-        reject(Object.assign(new Error("請求內容過大"), { status: 413 }));
-        req.destroy();
-      } else chunks.push(c);
+        if (size - c.length <= limit) reject(Object.assign(new Error("請求內容過大"), { status: 413 }));
+        chunks.length = 0; // 先回應 413，其餘內容丟棄（不先斷線，客戶端才收得到 413）
+      } else if (size <= limit) chunks.push(c);
     });
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     req.on("error", reject);
@@ -67,6 +67,7 @@ export function makeServer(cfg, app) {
       }
       send(res, 404, { error: "找不到" });
     } catch (e) {
+      if (e.status === 413) res.setHeader("Connection", "close");
       send(res, e.status ?? 500, { error: e.status ? e.message : "agent 內部錯誤" });
     }
   });

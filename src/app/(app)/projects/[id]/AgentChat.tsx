@@ -135,7 +135,7 @@ export function AgentChat({ projectId }: { projectId: string }) {
 
   async function send() {
     const t = text.trim();
-    if (!t || sending || !canAct) return;
+    if (!t || sending || busy || !canAct) return;
     setSending(true);
     setErr("");
     const r = await call<unknown>(`projects/${projectId}/chat`, { method: "POST", body: JSON.stringify({ text: t }) });
@@ -220,7 +220,7 @@ export function AgentChat({ projectId }: { projectId: string }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
                 e.preventDefault();
                 void send();
               }
@@ -236,8 +236,8 @@ export function AgentChat({ projectId }: { projectId: string }) {
           <button type="button" onClick={requestPrd} disabled={!canAct || sending || busy} className={secondary}>
             產生 PRD
           </button>
-          <button type="button" onClick={send} disabled={!canAct || sending || !text.trim()} className={primary}>
-            {sending ? "送出中…" : "送出"}
+          <button type="button" onClick={send} disabled={!canAct || sending || busy || !text.trim()} className={primary}>
+            {sending ? "送出中…" : busy ? "AI 思考中…" : "送出"}
           </button>
         </div>
       </div>

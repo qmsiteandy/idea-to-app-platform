@@ -40,6 +40,7 @@ export function getConfig() {
   };
   const missing = [];
   if (!cfg.token) missing.push("AGENT_TOKEN");
+  else if (cfg.token.length < 24) missing.push("AGENT_TOKEN（長度至少 24 字元，請用長隨機字串）");
   if (!fake) {
     if (!cfg.notionToken) missing.push("NOTION_TOKEN");
     if (!cfg.dataSourceId) missing.push("NOTION_PROJECTS_DATA_SOURCE_ID");
