@@ -3,40 +3,10 @@
 // 把 Markdown PRD 寫進專案頁面內容，狀態改為「PRD 待審」，並留言通知。
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { makeClient, platformLink, richText } from "./lib.mjs";
+import { makeClient, platformLink } from "./lib.mjs";
+import { markdownToBlocks, richText } from "./markdown.mjs";
 
-const block = (type, text) => ({ object: "block", type, [type]: { rich_text: richText(text) } });
-
-export function markdownToBlocks(md) {
-  const blocks = [];
-  let para = [];
-  const flush = () => {
-    if (para.length) blocks.push(block("paragraph", para.join("\n")));
-    para = [];
-  };
-  for (const raw of md.replace(/\r\n/g, "\n").split("\n")) {
-    const line = raw.trimEnd();
-    let m;
-    if (!line.trim()) flush();
-    else if ((m = line.match(/^(#{1,6})\s+(.*)$/))) {
-      flush();
-      blocks.push(block(`heading_${Math.min(m[1].length, 3)}`, m[2]));
-    } else if ((m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.*)$/))) {
-      flush();
-      const b = block("to_do", m[2]);
-      b.to_do.checked = m[1] !== " ";
-      blocks.push(b);
-    } else if ((m = line.match(/^\s*[-*]\s+(.*)$/))) {
-      flush();
-      blocks.push(block("bulleted_list_item", m[1]));
-    } else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
-      flush();
-      blocks.push(block("numbered_list_item", m[1]));
-    } else para.push(line.trim());
-  }
-  flush();
-  return blocks;
-}
+export { markdownToBlocks };
 
 export async function writePrd(client, pageId, md) {
   const blocks = markdownToBlocks(md);

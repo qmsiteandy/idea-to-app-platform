@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .data/
+
+# agent runtime
+/agent/.state/
+/agent/.workdir/
+/agent/.env

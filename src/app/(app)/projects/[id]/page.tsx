@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AgentChat } from "./AgentChat";
 import { PrdPanel } from "./PrdPanel";
 import { approvePrd, savePrd } from "./actions";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -68,6 +69,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               {project.idea || <span className="text-neutral-600">尚未填寫構想</span>}
             </p>
           </section>
+
+          {project.status === "discussing" && <AgentChat projectId={id} />}
 
           <PrdPanel
             key={`${project.updated_at}-${project.status}`}
