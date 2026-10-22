@@ -18,6 +18,7 @@ env:
   NOTION_INBOX_DATA_SOURCE_ID: 116a3153-cc28-482c-a3f4-73f112d0646a
   NOTION_PROJECTS_DATA_SOURCE_ID: b99acfce-7dcd-4619-8c2e-65a4c6fc7df7
   APP_URL: https://idea-to-app-platform.vercel.app
+  NOTION_NOTIFY_USER_ID: 9aa52697-496f-4e37-aa62-4778706cc00c
 
 jobs:
   sync:
