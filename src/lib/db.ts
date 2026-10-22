@@ -4,20 +4,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-export type ProjectStatus =
-  | "discussing"
-  | "prd_review"
-  | "building"
-  | "live"
-  | "iterating";
+import { STATUS_LABEL, STATUS_ORDER, type ProjectStatus } from "./status";
 
-export const STATUS_LABEL: Record<ProjectStatus, string> = {
-  discussing: "討論中",
-  prd_review: "PRD 待審",
-  building: "建置中",
-  live: "已上線",
-  iterating: "迭代中",
-};
+export { STATUS_LABEL };
+export type { ProjectStatus };
 
 export type Project = {
   id: string;
@@ -27,7 +17,9 @@ export type Project = {
   repo_url: string | null;
   prod_url: string | null;
   current_version: string | null;
+  notion_url: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type NewProject = { name: string; idea: string };
@@ -61,21 +53,32 @@ function fromPage(page: PageObjectResponse): Project {
   const status = (p.Status as { select?: { name: string } | null } | undefined)?.select?.name;
   return {
     id: page.id,
-    name: plain(p.Name),
+    name: plain(p.Name) || UNNAMED,
     idea: plain(p.Idea),
     status: (status && STATUS_BY_LABEL[status]) || "discussing",
     repo_url: url(p.Repo),
     prod_url: url(p["Prod URL"]),
     current_version: plain(p.Version) || null,
+    notion_url: page.url,
     created_at: page.created_time,
+    updated_at: page.last_edited_time,
   };
 }
 
+const UNNAMED = "未命名專案";
+
 const LOCAL_FILE = path.join(process.cwd(), ".data", "projects.json");
 
+// 本機檔案可能被手動編輯，讀入時正規化成與 Notion 模式一致
 async function readLocal(): Promise<Project[]> {
   try {
-    return JSON.parse(await fs.readFile(LOCAL_FILE, "utf8"));
+    const rows: Project[] = JSON.parse(await fs.readFile(LOCAL_FILE, "utf8"));
+    return rows.map((p) => ({
+      ...p,
+      name: p.name || UNNAMED,
+      status: STATUS_ORDER.includes(p.status) ? p.status : "discussing",
+      current_version: p.current_version || null,
+    }));
   } catch {
     return [];
   }
@@ -150,7 +153,9 @@ export async function createProject(input: NewProject): Promise<Project> {
     repo_url: null,
     prod_url: null,
     current_version: null,
+    notion_url: null,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   await writeLocal([project, ...(await readLocal())]);
   return project;
