@@ -1,0 +1,9 @@
+{
+  "name": "idea-to-app-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "常駐在你電腦上的 agent：用本機 Claude Code 訂閱與使用者討論專案並產生 PRD",
+  "scripts": { "start": "node index.mjs" },
+  "engines": { "node": ">=20" }
+}

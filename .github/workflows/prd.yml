@@ -1,11 +1,10 @@
 name: PRD generation
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # 已移除排程：日常流程由本機 agent（agent/）處理，避免與它搶同一個專案。此 workflow 僅作手動備援。
   workflow_dispatch:
 
-# 避免排程與手動觸發重疊執行，造成重複寫入 PRD
+# 避免多次手動觸發重疊執行，造成重複寫入 PRD
 concurrency:
   group: prd-generation
   cancel-in-progress: false

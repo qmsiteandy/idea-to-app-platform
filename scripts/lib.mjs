@@ -13,12 +13,7 @@ export function platformLink(pageId) {
   return base ? `${base}/projects/${pageId}` : null;
 }
 
-// Notion rich_text 單段上限 2000 字
-export function richText(s, max = 2000) {
-  const out = [];
-  for (let i = 0; i < s.length; i += max) out.push({ type: "text", text: { content: s.slice(i, i + max) } });
-  return out;
-}
+export { richText } from "./markdown.mjs";
 
 export const plain = (prop) => {
   const items = prop?.title ?? prop?.rich_text ?? [];

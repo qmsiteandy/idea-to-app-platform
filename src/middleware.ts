@@ -16,6 +16,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(home);
   }
   if (ok) return NextResponse.next();
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "未登入" }, { status: 401 });
+  }
   const url = req.nextUrl.clone();
   url.pathname = "/login";
   url.search = "";
