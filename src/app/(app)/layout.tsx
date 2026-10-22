@@ -15,9 +15,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/projects/new"
+                className="inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3.5 text-sm font-medium text-neutral-900 transition hover:border-neutral-500 sm:min-h-0 sm:py-1.5"
+              >
+                新增專案
+              </Link>
+              <Link
+                href="/ideas/new"
                 className="inline-flex min-h-11 items-center rounded-lg bg-neutral-900 px-3.5 text-sm sm:min-h-0 sm:py-1.5 font-medium text-white transition hover:bg-neutral-700"
               >
-                ＋ 新增專案
+                ＋ 新增想法
               </Link>
               <form action={logout}>
                 <button className="min-h-11 rounded-lg px-3 text-sm sm:min-h-0 sm:py-1.5 text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900">

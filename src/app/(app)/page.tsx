@@ -63,6 +63,7 @@ export default async function Home({
   const filter = STATUS_ORDER.includes(status as ProjectStatus) ? (status as ProjectStatus) : null;
   const projects = filter ? all.filter((p) => p.status === filter) : all;
 
+  const pending = all.filter((p) => p.status === "prd_review");
   const count = (s: ProjectStatus) => all.filter((p) => p.status === s).length;
   const active = all.filter((p) => p.status === "building" || p.status === "iterating").length;
   const latest = all.reduce<string | null>(
@@ -85,6 +86,31 @@ export default async function Home({
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           尚未設定 Notion，資料暫存在本機檔案，部署後不會保留。
         </p>
+      )}
+
+      {pending.length > 0 && (
+        <section
+          className="rounded-xl border-2 border-neutral-900 bg-white p-5"
+          aria-label="待你處理"
+        >
+          <h2 className="text-lg font-semibold">待你處理</h2>
+          <p className="mt-1 text-sm text-neutral-600">
+            以下 {pending.length} 個專案的 PRD 已產生，等你審閱、修改並核准。
+          </p>
+          <ul className="mt-3 divide-y divide-neutral-200">
+            {pending.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="flex min-h-11 items-center justify-between gap-3 py-2.5 hover:underline"
+                >
+                  <span className="min-w-0 truncate font-medium">{p.name}</span>
+                  <span className="shrink-0 text-sm text-neutral-600">審閱 PRD →</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="總覽">
