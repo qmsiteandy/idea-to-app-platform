@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PrdPanel } from "./PrdPanel";
+import { approvePrd, savePrd } from "./actions";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Stepper } from "@/components/Stepper";
-import { getProject } from "@/lib/db";
+import { getPrd, getProject } from "@/lib/db";
 import { hostOf, relativeTime, safeHttpUrl, shortDate } from "@/lib/format";
+import { toMarkdown } from "@/lib/prd";
 import { NEXT_STEP } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +40,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const project = await getProject(id);
   if (!project) notFound();
+  const prd = await getPrd(id);
   const next = NEXT_STEP[project.status];
   const prodUrl = safeHttpUrl(project.prod_url);
   const repoUrl = safeHttpUrl(project.repo_url);
@@ -64,6 +68,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               {project.idea || <span className="text-neutral-600">尚未填寫構想</span>}
             </p>
           </section>
+
+          <PrdPanel
+            key={`${project.updated_at}-${project.status}`}
+            blocks={prd}
+            markdown={toMarkdown(prd)}
+            canApprove={project.status === "prd_review"}
+            save={savePrd.bind(null, id)}
+            approve={approvePrd.bind(null, id)}
+          />
 
           <section className="rounded-xl border border-neutral-900/10 bg-neutral-900 p-6 text-white">
             <div className="text-xs font-medium uppercase tracking-wide text-neutral-200">下一步</div>

@@ -1,9 +1,10 @@
 import { Client, isFullPage } from "@notionhq/client";
-import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type { BlockObjectResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
+import { parseMarkdown, toMarkdown, toNotionBlocks, type PrdBlock, type PrdBlockType } from "./prd";
 import { STATUS_LABEL, STATUS_ORDER, type ProjectStatus } from "./status";
 
 export { STATUS_LABEL };
@@ -20,6 +21,7 @@ export type Project = {
   notion_url: string | null;
   created_at: string;
   updated_at: string;
+  prd?: string; // 僅本機檔案模式使用（Markdown）；Notion 模式存在頁面內容
 };
 
 export type NewProject = { name: string; idea: string };
@@ -159,4 +161,108 @@ export async function createProject(input: NewProject): Promise<Project> {
   };
   await writeLocal([project, ...(await readLocal())]);
   return project;
+}
+
+// ---- 新增想法（收件匣） ----
+export type NewIdea = { title: string; details: string; type: "新專案" | "新功能"; target: string };
+
+const INBOX_FILE = path.join(process.cwd(), ".data", "inbox.json");
+
+export async function createIdea(input: NewIdea): Promise<void> {
+  const token = process.env.NOTION_TOKEN;
+  const inboxId = process.env.NOTION_INBOX_DATA_SOURCE_ID;
+  if (token && inboxId) {
+    await new Client({ auth: token }).pages.create({
+      parent: { type: "data_source_id", data_source_id: inboxId },
+      properties: {
+        Idea: { title: text(input.title) },
+        Details: { rich_text: text(input.details) },
+        Type: { select: { name: input.type } },
+        "Target project": { rich_text: text(input.target) },
+        Handled: { select: { name: "待處理" } },
+      },
+    });
+    return;
+  }
+  let rows: unknown[] = [];
+  try {
+    rows = JSON.parse(await fs.readFile(INBOX_FILE, "utf8"));
+  } catch {}
+  rows.unshift({ id: randomUUID(), ...input, handled: "待處理", created_at: new Date().toISOString() });
+  await fs.mkdir(path.dirname(INBOX_FILE), { recursive: true });
+  await fs.writeFile(INBOX_FILE, JSON.stringify(rows, null, 2));
+}
+
+// ---- PRD（專案頁面內容） ----
+const TEXT_BLOCKS = new Set<PrdBlockType>([
+  "heading_1", "heading_2", "heading_3", "paragraph", "bulleted_list_item", "numbered_list_item", "to_do",
+]);
+
+export async function getPrd(id: string): Promise<PrdBlock[]> {
+  const n = notion();
+  if (!n) return parseMarkdown((await readLocal()).find((p) => p.id === id)?.prd ?? "");
+  const out: PrdBlock[] = [];
+  try {
+    let cursor: string | undefined;
+    do {
+      const res = await n.client.blocks.children.list({ block_id: id, start_cursor: cursor, page_size: 100 });
+      for (const b of res.results as BlockObjectResponse[]) {
+        if (!TEXT_BLOCKS.has(b.type as PrdBlockType)) continue;
+        const body = (b as unknown as Record<string, { rich_text: { plain_text: string }[]; checked?: boolean }>)[b.type];
+        out.push({
+          type: b.type as PrdBlockType,
+          text: body.rich_text.map((t) => t.plain_text).join(""),
+          ...(b.type === "to_do" ? { checked: !!body.checked } : {}),
+        });
+      }
+      cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+    } while (cursor);
+  } catch {
+    return [];
+  }
+  return out;
+}
+
+export async function getPrdMarkdown(id: string) {
+  return toMarkdown(await getPrd(id));
+}
+
+// 取代整份 PRD：先寫入新內容再刪舊區塊，中途失敗也不會讓內容遺失
+export async function replacePrd(id: string, md: string): Promise<void> {
+  const blocks = parseMarkdown(md);
+  if (!blocks.length) throw new Error("PRD 內容不可為空");
+  const n = notion();
+  if (!n) {
+    const rows = await readLocal();
+    const i = rows.findIndex((p) => p.id === id);
+    if (i < 0) throw new Error("找不到專案");
+    rows[i] = { ...rows[i], prd: md, updated_at: new Date().toISOString() };
+    await writeLocal(rows);
+    return;
+  }
+  const oldIds: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const res = await n.client.blocks.children.list({ block_id: id, start_cursor: cursor, page_size: 100 });
+    oldIds.push(...res.results.map((b) => b.id));
+    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+  } while (cursor);
+  const notionBlocks = toNotionBlocks(blocks);
+  for (let i = 0; i < notionBlocks.length; i += 100) {
+    await n.client.blocks.children.append({ block_id: id, children: notionBlocks.slice(i, i + 100) });
+  }
+  for (const b of oldIds) await n.client.blocks.delete({ block_id: b });
+}
+
+export async function setStatus(id: string, status: ProjectStatus): Promise<void> {
+  const n = notion();
+  if (n) {
+    await n.client.pages.update({ page_id: id, properties: { Status: { select: { name: STATUS_LABEL[status] } } } });
+    return;
+  }
+  const rows = await readLocal();
+  const i = rows.findIndex((p) => p.id === id);
+  if (i < 0) throw new Error("找不到專案");
+  rows[i] = { ...rows[i], status, updated_at: new Date().toISOString() };
+  await writeLocal(rows);
 }
