@@ -24,7 +24,7 @@ export default function NewProject() {
       <div>
         <h1 className="text-2xl font-semibold">新增專案</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          先寫下名稱與一句話構想，之後 AI 會在需求訪談中幫你補完細節。
+          先寫下名稱與一句話構想。建立後系統會自動產生 PRD，約 15 分鐘內完成，完成時會在 Notion @ 通知你。
         </p>
       </div>
       <NewProjectForm action={create} />

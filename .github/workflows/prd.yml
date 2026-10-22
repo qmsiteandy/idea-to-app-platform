@@ -1,13 +1,13 @@
-name: Inbox to PRD
+name: PRD generation
 
 on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
 
-# 避免排程與手動觸發重疊執行，造成重複建立專案或重複寫入 PRD
+# 避免排程與手動觸發重疊執行，造成重複寫入 PRD
 concurrency:
-  group: inbox-prd
+  group: prd-generation
   cancel-in-progress: false
 
 permissions:
@@ -15,13 +15,12 @@ permissions:
 
 env:
   NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-  NOTION_INBOX_DATA_SOURCE_ID: 116a3153-cc28-482c-a3f4-73f112d0646a
   NOTION_PROJECTS_DATA_SOURCE_ID: b99acfce-7dcd-4619-8c2e-65a4c6fc7df7
   APP_URL: https://idea-to-app-platform.vercel.app
   NOTION_NOTIFY_USER_ID: 9aa52697-496f-4e37-aa62-4778706cc00c
 
 jobs:
-  sync:
+  targets:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -33,8 +32,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: 收件匣同步（新專案）
-        run: node scripts/inbox-sync.mjs
       - name: 找出需要產生 PRD 的專案
         id: targets
         run: |
@@ -43,16 +40,16 @@ jobs:
           echo "PRD targets: $targets"
 
   prd:
-    needs: sync
+    needs: targets
     # 沒有目標時整個 job 跳過，不會呼叫 Claude
-    if: needs.sync.outputs.targets != '[]'
+    if: needs.targets.outputs.targets != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        target: ${{ fromJson(needs.sync.outputs.targets) }}
+        target: ${{ fromJson(needs.targets.outputs.targets) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
