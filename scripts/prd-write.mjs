@@ -46,10 +46,15 @@ export async function writePrd(client, pageId, md) {
   }
   await client.pages.update({ page_id: pageId, properties: { Status: { select: { name: "PRD 待審" } } } });
   const link = platformLink(pageId);
-  await client.comments.create({
-    parent: { page_id: pageId },
-    rich_text: richText(`PRD 已產生，請審閱。${link ? `平台連結：${link}` : ""}`),
-  });
+  try {
+    await client.comments.create({
+      parent: { page_id: pageId },
+      rich_text: richText(`PRD 已產生，請審閱。${link ? `平台連結：${link}` : ""}`),
+    });
+  } catch (err) {
+    // 通知失敗不應讓已寫好的 PRD 算作失敗（常見原因：integration 未開啟「插入留言」權限）。
+    console.warn(`PRD 已寫入，但留言通知失敗：${err.message}`);
+  }
   return blocks.length;
 }
 
